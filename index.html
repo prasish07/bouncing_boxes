@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>screen saver</title>
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+
+<body>
+    <div class="canvas-container">
+        <canvas id="canvas"></canvas>
+        <div class="canvas__input-field">
+            <label for="count">Enter the boxes: </label>
+            <input type="number" id="count" class="input-box">
+        </div>
+        <div class="canvas__input-field">
+            <label for="shape">Choose a shape: </label>
+            <select id="shape">
+                <option value="square">Square</option>
+                <option value="circle">Circle</option>
+            </select>
+        </div>
+        <button class="btn" onclick=handleSubmit()>Submit</button>
+    </div>
+    <script src="./js/index.js"></script>
+</body>
+
+</html>
