@@ -82,13 +82,24 @@ const boxes = () => {
 
             circleA.x -= separationDistance * ux;
             circleA.y -= separationDistance * uy;
-            circleB.x -= separationDistance * ux;
-            circleB.y -= separationDistance * uy;
+            circleB.x += separationDistance * ux;
+            circleB.y += separationDistance * uy;
 
-            circleA.xSpeed *= -1;
-            circleA.ySpeed *= -1;
-            circleB.xSpeed *= -1;
-            circleB.ySpeed *= -1;
+            // Calculate the relative velocity
+            let relSpeedX = circleA.xSpeed - circleB.xSpeed;
+            let relSpeedY = circleA.ySpeed - circleB.ySpeed;
+
+            // Transfer velocity from fast circle to slow circle and vice versa
+            if (Math.abs(relSpeedX) > Math.abs(circleB.xSpeed)) {
+              const tempSpeed = circleB.xSpeed;
+              circleB.xSpeed = circleA.xSpeed;
+              circleA.xSpeed = tempSpeed;
+            }
+            if (Math.abs(relSpeedY) > Math.abs(circleB.ySpeed)) {
+              const tempSpeed = circleB.ySpeed;
+              circleB.ySpeed = circleA.ySpeed;
+              circleA.ySpeed = tempSpeed;
+            }
           }
         }
       }
@@ -125,32 +136,50 @@ const boxes = () => {
             boxA.y < boxB.y + boxB.height &&
             boxA.y + boxA.height > boxB.y
           ) {
-            // Calculate the overlap distance between x and y axes
-            let overlapX = Math.min(
+            // Calculate overlap vectors
+            const overlapX = Math.min(
               boxA.x + boxA.width - boxB.x,
               boxB.x + boxB.width - boxA.x
             );
-            let overlapY = Math.min(
+            const overlapY = Math.min(
               boxA.y + boxA.height - boxB.y,
               boxB.y + boxB.height - boxA.y
             );
 
-            // Move the boxes apart along the axis with the smallest overlap
+            // Calculate separation vectors
+            const separationX = overlapX * 0.5;
+            const separationY = overlapY * 0.5;
+
+            // Move boxes apart
             if (overlapX < overlapY) {
               if (boxA.x < boxB.x) {
-                boxA.x -= overlapX / 2;
-                boxB.x += overlapX / 2;
+                boxA.x -= separationX;
+                boxB.x += separationX;
               } else {
-                boxA.x += overlapX / 2;
-                boxB.x -= overlapX / 2;
+                boxA.x += separationX;
+                boxB.x -= separationX;
+              }
+
+              // Transfer velocity from fast box to slow box and vice versa
+              if (Math.abs(boxA.xSpeed) > Math.abs(boxB.xSpeed)) {
+                const tempSpeed = boxB.xSpeed;
+                boxB.xSpeed = boxA.xSpeed;
+                boxA.xSpeed = tempSpeed;
               }
             } else {
               if (boxA.y < boxB.y) {
-                boxA.y -= overlapY / 2;
-                boxB.y += overlapY / 2;
+                boxA.y -= separationY;
+                boxB.y += separationY;
               } else {
-                boxA.y += overlapY / 2;
-                boxB.y -= overlapY / 2;
+                boxA.y += separationY;
+                boxB.y -= separationY;
+              }
+
+              // Transfer velocity from fast box to slow box and vice versa
+              if (Math.abs(boxA.ySpeed) > Math.abs(boxB.ySpeed)) {
+                const tempSpeed = boxB.ySpeed;
+                boxB.ySpeed = boxA.ySpeed;
+                boxA.ySpeed = tempSpeed;
               }
             }
 
@@ -176,8 +205,8 @@ const box = () => {
   const x = Math.random() * (canvasWidth - (width + height) / 2);
   const y = Math.random() * (canvasHeight - (width + height) / 2);
 
-  const xSpeed = Math.random() * 2 + 1;
-  const ySpeed = Math.random() * 2 + 1;
+  const xSpeed = Math.random() * 3 + 1;
+  const ySpeed = Math.random() * 3 + 1;
 
   return {
     width: width,
