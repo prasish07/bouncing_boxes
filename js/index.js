@@ -3,6 +3,7 @@ const canvasHeight = 500;
 let count = 10;
 let interval;
 let shape;
+let isCircle = true;
 
 const clearCanvas = () => {
   const canvas = document.getElementById("canvas");
@@ -17,6 +18,8 @@ const handleSubmit = () => {
     count = 10;
   }
   shape = document.getElementById("shape").value;
+  isCircle = Boolean(shape === "circle");
+  console.log(isCircle);
   clearInterval(interval);
   clearCanvas();
   boxes();
@@ -30,14 +33,46 @@ const boxes = () => {
   const boxesArray = [];
 
   for (let i = 0; i < count; i++) {
-    shape === "circle"
+    isCircle
       ? // for circles
         boxesArray.push(circle())
       : // for boxes
         boxesArray.push(box());
   }
 
-  if (shape === "circle") {
+  // event to erase or destroy the box when user click on it
+  canvas.addEventListener("click", (event) => {
+    const canvasRect = canvas.getBoundingClientRect();
+    const mouseX = event.clientX - canvasRect.left;
+    const mouseY = event.clientY - canvasRect.top;
+
+    // Loop through the boxes or circles and checking if a boll/box is clicked
+    for (let i = 0; i < boxesArray.length; i++) {
+      const shape = boxesArray[i];
+
+      if (isCircle) {
+        const dx = mouseX - shape.x;
+        const dy = mouseY - shape.y;
+        const distanceSquared = dx ** 2 + dy ** 2;
+        if (distanceSquared <= shape.radius ** 2) {
+          boxesArray.splice(i, 1);
+          i--;
+        }
+      } else {
+        if (
+          mouseX >= shape.x &&
+          mouseX <= shape.x + shape.width &&
+          mouseY >= shape.y &&
+          mouseY <= shape.y + shape.height
+        ) {
+          boxesArray.splice(i, 1);
+          i--;
+        }
+      }
+    }
+  });
+
+  if (isCircle) {
     //  for circles
     interval = setInterval(() => {
       ctx.clearRect(0, 0, canvasWidth, canvasHeight);
@@ -104,95 +139,98 @@ const boxes = () => {
         }
       }
     }, 1000 / 60);
-  } else {
-    // for boxes
-    interval = setInterval(() => {
-      // Removing the previous frame
-      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    return;
+  }
+  // for boxes
+  interval = setInterval(() => {
+    // Removing the previous frame
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-      for (let i = 0; i < boxesArray.length; i++) {
-        const boxA = boxesArray[i];
-        ctx.fillStyle = boxA.color;
-        // creating the rectangle with specific setting
-        ctx.fillRect(boxA.x, boxA.y, boxA.width, boxA.height);
+    for (let i = 0; i < boxesArray.length; i++) {
+      const boxA = boxesArray[i];
+      ctx.fillStyle = boxA.color;
+      // creating the rectangle with specific setting
+      ctx.fillRect(boxA.x, boxA.y, boxA.width, boxA.height);
 
-        boxA.x += boxA.xSpeed;
-        boxA.y += boxA.ySpeed;
+      boxA.x += boxA.xSpeed;
+      boxA.y += boxA.ySpeed;
 
-        if (boxA.x + boxA.width > canvasWidth || boxA.x < 0) {
-          boxA.xSpeed *= -1;
-        }
-        if (boxA.y + boxA.height > canvasHeight || boxA.y < 0) {
-          boxA.ySpeed *= -1;
-        }
-        //   Checking out certain box with other boxes with loop
-        for (let j = i + 1; j < boxesArray.length; j++) {
-          // Denoting the second box
-          const boxB = boxesArray[j];
-          // Checking if the boxes are colliding with simple Collision Detection condition
-          if (
-            boxA.x < boxB.x + boxB.width &&
-            boxA.x + boxA.width > boxB.x &&
-            boxA.y < boxB.y + boxB.height &&
-            boxA.y + boxA.height > boxB.y
-          ) {
-            // Calculate overlap vectors
-            const overlapX = Math.min(
-              boxA.x + boxA.width - boxB.x,
-              boxB.x + boxB.width - boxA.x
-            );
-            const overlapY = Math.min(
-              boxA.y + boxA.height - boxB.y,
-              boxB.y + boxB.height - boxA.y
-            );
+      if (boxA.x + boxA.width > canvasWidth || boxA.x < 0) {
+        boxA.xSpeed *= -1;
+      }
+      if (boxA.y + boxA.height > canvasHeight || boxA.y < 0) {
+        boxA.ySpeed *= -1;
+      }
+      //   Checking out certain box with other boxes with loop
+      for (let j = i + 1; j < boxesArray.length; j++) {
+        // Denoting the second box
+        const boxB = boxesArray[j];
 
-            // Calculate separation vectors
-            const separationX = overlapX * 0.5;
-            const separationY = overlapY * 0.5;
+        // formula for collision
+        let isCollided =
+          boxA.x < boxB.x + boxB.width &&
+          boxA.x + boxA.width > boxB.x &&
+          boxA.y < boxB.y + boxB.height &&
+          boxA.y + boxA.height > boxB.y;
 
-            // Move boxes apart
-            if (overlapX < overlapY) {
-              if (boxA.x < boxB.x) {
-                boxA.x -= separationX;
-                boxB.x += separationX;
-              } else {
-                boxA.x += separationX;
-                boxB.x -= separationX;
-              }
+        // Checking if the boxes are colliding with simple Collision Detection condition
+        if (isCollided) {
+          // Calculate overlap vectors
+          const overlapX = Math.min(
+            boxA.x + boxA.width - boxB.x,
+            boxB.x + boxB.width - boxA.x
+          );
+          const overlapY = Math.min(
+            boxA.y + boxA.height - boxB.y,
+            boxB.y + boxB.height - boxA.y
+          );
 
-              // Transfer velocity from fast box to slow box and vice versa
-              if (Math.abs(boxA.xSpeed) > Math.abs(boxB.xSpeed)) {
-                const tempSpeed = boxB.xSpeed;
-                boxB.xSpeed = boxA.xSpeed;
-                boxA.xSpeed = tempSpeed;
-              }
+          // Calculate separation vectors
+          const separationX = overlapX / 2;
+          const separationY = overlapY / 2;
+
+          // Move boxes apart
+          if (overlapX < overlapY) {
+            if (boxA.x < boxB.x) {
+              boxA.x -= separationX;
+              boxB.x += separationX;
             } else {
-              if (boxA.y < boxB.y) {
-                boxA.y -= separationY;
-                boxB.y += separationY;
-              } else {
-                boxA.y += separationY;
-                boxB.y -= separationY;
-              }
-
-              // Transfer velocity from fast box to slow box and vice versa
-              if (Math.abs(boxA.ySpeed) > Math.abs(boxB.ySpeed)) {
-                const tempSpeed = boxB.ySpeed;
-                boxB.ySpeed = boxA.ySpeed;
-                boxA.ySpeed = tempSpeed;
-              }
+              boxA.x += separationX;
+              boxB.x -= separationX;
             }
 
-            // If boxes are collide changing the directive of boxes
-            boxA.xSpeed *= -1;
-            boxA.ySpeed *= -1;
-            boxB.xSpeed *= -1;
-            boxB.ySpeed *= -1;
+            // Transfer velocity from fast box to slow box and vice versa
+            if (Math.abs(boxA.xSpeed) > Math.abs(boxB.xSpeed)) {
+              const tempSpeed = boxB.xSpeed;
+              boxB.xSpeed = boxA.xSpeed;
+              boxA.xSpeed = tempSpeed;
+            }
+          } else {
+            if (boxA.y < boxB.y) {
+              boxA.y -= separationY;
+              boxB.y += separationY;
+            } else {
+              boxA.y += separationY;
+              boxB.y -= separationY;
+            }
+
+            // Transfer velocity from fast box to slow box and vice versa
+            if (Math.abs(boxA.ySpeed) > Math.abs(boxB.ySpeed)) {
+              const tempSpeed = boxB.ySpeed;
+              boxB.ySpeed = boxA.ySpeed;
+              boxA.ySpeed = tempSpeed;
+            }
           }
+
+          // If boxes are collide changing the directive of boxes
+          boxA.xSpeed *= -1;
+          boxA.ySpeed *= -1;
+          boxB.xSpeed *= -1;
+          boxB.ySpeed *= -1;
         }
       }
-    }, 1000 / 60);
-  }
+    }
+  }, 1000 / 60);
 };
 
 // Defining the simple box
@@ -205,8 +243,8 @@ const box = () => {
   const x = Math.random() * (canvasWidth - (width + height) / 2);
   const y = Math.random() * (canvasHeight - (width + height) / 2);
 
-  const xSpeed = Math.random() * 3 + 1;
-  const ySpeed = Math.random() * 3 + 1;
+  const xSpeed = Math.random() * 7 + 1;
+  const ySpeed = Math.random() * 7 + 1;
 
   return {
     width: width,
@@ -227,8 +265,8 @@ const circle = () => {
   const x = Math.random() * (canvasWidth - radius);
   const y = Math.random() * (canvasHeight - radius);
 
-  const xSpeed = Math.random() * 2 + 1;
-  const ySpeed = Math.random() * 2 + 1;
+  const xSpeed = Math.random() * 7 + 1;
+  const ySpeed = Math.random() * 7 + 1;
 
   return {
     radius: radius,
